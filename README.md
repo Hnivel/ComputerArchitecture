@@ -1,1 +1,1 @@
-**CO2008 - Ho Chi Minh City University of Technology - HK241**
+**CO2008 - Computer Architecture - Ho Chi Minh City University of Technology**
