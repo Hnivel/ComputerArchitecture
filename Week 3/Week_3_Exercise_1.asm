@@ -65,10 +65,23 @@ main:
     div.d   $f24,               $f18,                   $f20    # x2 = (-b - sqrt(discriminant)) / (2*a)
 
     # Print "x1 = " and the value of x1
+    li $t0, 10000
+    mtc1 $t0, $f30
+    cvt.d.w $f30, $f30
+    mul.d $f22, $f22, $f30
+    round.w.d $f22, $f22
+    cvt.d.w $f22, $f22
+    div.d $f22, $f22, $f30
     li      $v0,                4
     la      $a0,                two_solutions_msg_x1
     syscall
-
+    li $t0, 10000
+    mtc1 $t0, $f30
+    cvt.d.w $f30, $f30
+    mul.d $f24, $f24, $f30
+    round.w.d $f24, $f24
+    cvt.d.w $f24, $f24
+    div.d $f24, $f24, $f30
     li      $v0,                3                               # syscall for printing double
     mov.d   $f12,               $f22                            # move x1 to $f12 for printing
     syscall
@@ -97,7 +110,13 @@ one_solution:
     li      $v0,                4
     la      $a0,                one_solution_msg
     syscall
-
+    li $t0, 10000
+    mtc1 $t0, $f30
+    cvt.d.w $f30, $f30
+    mul.d $f20, $f20, $f30
+    round.w.d $f20, $f20
+    cvt.d.w $f20, $f20
+    div.d $f20, $f20, $f30
     li      $v0,                3
     mov.d   $f12,               $f20
     syscall

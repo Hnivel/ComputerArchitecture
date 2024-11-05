@@ -1,117 +1,175 @@
 .data
-input_filename: .asciiz "raw_input.txt"
+filename: .asciiz "raw_input.txt"
 output_filename: .asciiz "formatted_result.txt"
-output_header: .asciiz "-----Student personal information-----\n"
-label_name: .asciiz "Name: "
-label_id: .asciiz "ID: "
-label_address: .asciiz "Address: "
-label_age: .asciiz "Age: "
-label_religion: .asciiz "Religion: "
-buffer_read: .space 128        # Space for reading input
+buffer_size: .word 256
+newline: .asciiz "\n"
+header: .asciiz "-----Student personal information-----\n"
+name_label: .asciiz "Name: "
+id_label: .asciiz "ID: "
+address_label: .asciiz "Address: "
+age_label: .asciiz "Age: "
+religion_label: .asciiz "Religion: "
 
 .text
-main:
-    # Open input file for reading
-    li $v0, 13                  # Syscall for open file
-    la $a0, input_filename      # File name
-    li $a1, 0                   # Read-only mode
-    li $a2, 0                   # Default permissions
-    syscall
-    move $s0, $v0               # Store file descriptor in $s0
-    bltz $s0, file_open_error   # Check if file opened successfully
+.globl main
 
-    # Allocate space for reading the line
-    la $a1, buffer_read         # Load buffer address for reading
-    li $a2, 128                 # Number of bytes to read
-    li $v0, 14                  # Syscall for reading from file
-    move $a0, $s0               # File descriptor
+main:
+    # Open the input file
+    li $v0, 13
+    la $a0, filename
+    li $a1, 0 # Read-only
     syscall
-    move $s1, $a1               # Store address of buffer
+    move $s0, $v0 # Store file descriptor
+
+    # Allocate memory for the buffer
+    li $v0, 9
+    lw $a0, buffer_size
+    syscall
+    move $s1, $v0 # Store buffer address
+
+    # Read the file content into the buffer
+    li $v0, 14
+    move $a0, $s0 # File descriptor
+    move $a1, $s1 # Buffer address
+    lw $a2, buffer_size # Buffer size
+    syscall
 
     # Close the input file
-    li $v0, 16                  # Syscall for close file
-    move $a0, $s0               # File descriptor
+    li $v0, 16
+    move $a0, $s0
     syscall
 
-    # Create and open output file for writing
-    li $v0, 13                  # Syscall for open file
-    la $a0, output_filename     # Output file name
-    li $a1, 1                   # Open in write-only mode
-    li $a2, 0x180               # Create file with RW permissions
+    # Print the header
+    li $v0, 4
+    la $a0, header
     syscall
-    move $s2, $v0               # Store output file descriptor in $s2
-    bltz $s2, file_open_error   # Check if output file opened successfully
 
-    # Print header to terminal and write to file
-    la $a0, output_header
-    jal print_and_write
-
-    # Print and write "Name: " and the name field
-    la $a0, label_name
-    jal print_and_write
-    move $a0, $s1               # Move to start of name
+    # Parse and print the name
+    la $t0, name_label
+    jal print_label
     jal print_field
 
-    # Print and write "ID: " and the ID field
-    la $a0, label_id
-    jal print_and_write
-    addi $a0, $s1, 11           # Adjust pointer to start of ID
+    # Parse and print the ID
+    la $t0, id_label
+    jal print_label
     jal print_field
 
-    # Print and write "Address: " and the address field
-    la $a0, label_address
-    jal print_and_write
-    addi $a0, $s1, 19           # Adjust pointer to start of Address
+    # Parse and print the address
+    la $t0, address_label
+    jal print_label
     jal print_field
 
-    # Print and write "Age: " and the age field
-    la $a0, label_age
-    jal print_and_write
-    addi $a0, $s1, 68           # Adjust pointer to start of Age
+    # Parse and print the age
+    la $t0, age_label
+    jal print_label
     jal print_field
 
-    # Print and write "Religion: " and the religion field
-    la $a0, label_religion
-    jal print_and_write
-    addi $a0, $s1, 71           # Adjust pointer to start of Religion
+    # Parse and print the religion
+    la $t0, religion_label
+    jal print_label
     jal print_field
+
+    # Open the output file
+    li $v0, 13
+    la $a0, output_filename
+    li $a1, 1 # Write-only
+    li $a2, 644 # File permissions
+    syscall
+    move $s2, $v0 # Store file descriptor
+
+    # Write the formatted result to the output file
+    la $a0, header
+    jal write_to_file
+
+    la $a0, name_label
+    jal write_to_file
+    jal write_field_to_file
+
+    la $a0, id_label
+    jal write_to_file
+    jal write_field_to_file
+
+    la $a0, address_label
+    jal write_to_file
+    jal write_field_to_file
+
+    la $a0, age_label
+    jal write_to_file
+    jal write_field_to_file
+
+    la $a0, religion_label
+    jal write_to_file
+    jal write_field_to_file
 
     # Close the output file
-    li $v0, 16                  # Syscall for close file
-    move $a0, $s2               # Output file descriptor
+    li $v0, 16
+    move $a0, $s2
     syscall
 
-    # Exit program
+    # Exit the program
     li $v0, 10
     syscall
 
-# Procedure to print to terminal and write to file
-print_and_write:
-    # Print to terminal
+print_label:
     li $v0, 4
+    move $a0, $t0
     syscall
+    jr $ra
 
-    # Write to output file
-    move $a0, $s2               # Output file descriptor
-    li $v0, 15                  # Syscall for writing to file
-    move $a1, $a0               # Address of string to write
-    li $a2, 128                 # Number of bytes to write (adjust as needed)
-    syscall
-    jr $ra                      # Return
-
-# Procedure to print a specific field (prints until comma or newline)
 print_field:
-    li $v0, 4                   # Syscall to print string
-    syscall
+    move $t1, $s1
+    li $t2, 44 # ASCII code for comma
+    li $t3, 0
 
-    # Write to output file
-    li $v0, 15                  # Syscall for writing to file
-    move $a0, $s2               # Output file descriptor
-    li $a2, 128                 # Number of bytes to write (adjust as needed)
+print_field_loop:
+    lb $t4, 0($t1)
+    beq $t4, $t2, print_field_end
+    beq $t4, $zero, print_field_end
+    li $v0, 11
+    move $a0, $t4
     syscall
-    jr $ra                      # Return
+    addi $t1, $t1, 1
+    addi $t3, $t3, 1
+    j print_field_loop
 
-# Error handling for file open
-file_open_error:
-    li $v0, 10                  # Exit program if file open failed
+print_field_end:
+    addi $s1, $s1, 1
+    li $v0, 4
+    la $a0, newline
     syscall
+    jr $ra
+
+write_to_file:
+    li $v0, 15
+    move $a0, $s2 # File descriptor
+    move $a1, $t0 # Buffer address
+    li $a2, 256 # Buffer size
+    syscall
+    jr $ra
+
+write_field_to_file:
+    move $t1, $s1
+    li $t2, 44 # ASCII code for comma
+    li $t3, 0
+
+write_field_loop:
+    lb $t4, 0($t1)
+    beq $t4, $t2, write_field_end
+    beq $t4, $zero, write_field_end
+    li $v0, 15
+    move $a0, $s2 # File descriptor
+    move $a1, $t1 # Buffer address
+    li $a2, 1 # Buffer size
+    syscall
+    addi $t1, $t1, 1
+    addi $t3, $t3, 1
+    j write_field_loop
+
+write_field_end:
+    addi $s1, $s1, 1
+    li $v0, 15
+    move $a0, $s2 # File descriptor
+    la $a1, newline
+    li $a2, 1
+    syscall
+    jr $ra

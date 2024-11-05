@@ -123,6 +123,13 @@ mul.s $f15, $f11, $f14 # $f15 = A * v^7
 add.s $f31, $f31, $f15 # $f30 = A * v^7 + B * v^6 + C * v^2
 # Final
 sub.s $f29, $f30, $f31
+li $t0, 10000
+mtc1 $t0, $f15
+cvt.s.w $f15, $f15
+mul.s $f29, $f29, $f15
+round.w.s $f29, $f29
+cvt.s.w $f29, $f29
+div.s $f29, $f29, $f15
 li $v0, 2
 mov.s $f12, $f29
 syscall
