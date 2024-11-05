@@ -86,8 +86,12 @@ main:
 
 one_solution:
     # Compute and print the single solution x = -b / (2*a)
-    neg.d   $f9,                $f1
-    div.d   $f9,                $f9,                    $f11    # x = -b / (2*a)
+    neg.d   $f14,               $f2                             # -b
+    li      $t0,                2                               # $t0 = 2
+    mtc1    $t0,                $f8                             # $f8 = 2
+    cvt.d.w $f8,                $f8                             # $f8 = 2.0
+    mul.d   $f20,               $f26,                   $f8     # $f20 = 2 * a
+    div.d   $f20,               $f14,                   $f20    # x = -b / (2*a)
 
     # Print "There is one solution, x = "
     li      $v0,                4
@@ -95,7 +99,7 @@ one_solution:
     syscall
 
     li      $v0,                3
-    mov.d   $f12,               $f9
+    mov.d   $f12,               $f20
     syscall
     j       end
 
