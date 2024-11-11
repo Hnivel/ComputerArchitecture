@@ -57,7 +57,7 @@ OutputLCM:
     # Print "LCM = "
     li      $v0,        4
     la      $a0,        output_2
-    syscall                                     # Print "GCD = "
+    syscall                                     # Print "LCM = "
     li      $v0,        1
     move    $a0,        $t4
     syscall
